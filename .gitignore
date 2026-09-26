@@ -1,0 +1,18 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Folaio data: models, libraries and packs never go into the repository
+brains/
+Folaio-data/
+HeraAI-data/
+*.gguf
+*.part
+*.folaio
+*.herapack
+*.pdf
+
+# Local machine settings
+.claude/
+.DS_Store

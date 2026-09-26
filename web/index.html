@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Folaio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="side">
+  <div class="logo"><span class="mark">F</span> Folaio</div>
+  <nav>
+    <button data-view="ask" class="active">💬 Ask</button>
+    <button data-view="search">🔎 Search</button>
+    <button data-view="study">🎓 Study</button>
+    <button data-view="library">📚 Library</button>
+    <button data-view="brains">🧠 Brains</button>
+  </nav>
+  <nav class="bottom-nav">
+    <button data-view="settings">⚙️ Settings</button>
+  </nav>
+  <div class="activity" id="activity">Starting…</div>
+</aside>
+
+<main>
+  <!-- ASK -->
+  <section id="view-ask" class="view active">
+    <div id="chat" class="chat">
+      <div class="empty" id="chat-empty">
+        <h1>Ask your documents anything</h1>
+        <p>Answers come only from your PDFs, with the page they came from.</p>
+      </div>
+    </div>
+    <form id="ask-form" class="composer">
+      <select id="ask-scope" class="scope" title="Which documents to use"></select>
+      <input id="ask-input" placeholder="e.g. What are the causes of inflation?" autocomplete="off">
+      <button class="primary">Ask</button>
+    </form>
+  </section>
+
+  <!-- SEARCH -->
+  <section id="view-search" class="view">
+    <h2>Search your library</h2>
+    <form id="search-form" class="row">
+      <input id="search-input" placeholder="Search words or meaning…" autocomplete="off">
+      <button class="primary">Search</button>
+    </form>
+    <div id="search-results" class="results"></div>
+  </section>
+
+  <!-- STUDY -->
+  <section id="view-study" class="view">
+    <h2>Study</h2>
+    <div class="stats" id="stats"></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="today">📅 Today</button>
+      <button class="tab" data-tab="map">🗺️ My progress</button>
+      <button class="tab" data-tab="quiz">Quiz</button>
+      <button class="tab" data-tab="notes">Summaries</button>
+      <button class="tab" data-tab="papers">📝 Past papers</button>
+      <button class="tab" data-tab="check">✍️ Check my answer</button>
+    </div>
+    <div id="tab-today" class="tabpane active">
+      <div id="today"></div>
+    </div>
+    <div id="tab-map" class="tabpane">
+      <div id="map"></div>
+    </div>
+    <div id="tab-quiz" class="tabpane">
+      <div id="practising" class="banner hidden"></div>
+      <div class="row"><select id="quiz-scope" class="scope"></select></div>
+      <div id="card" class="card"></div>
+    </div>
+    <div id="tab-papers" class="tabpane">
+      <label class="drop" id="paper-drop">
+        <input type="file" id="paper-input" accept="application/pdf" multiple hidden>
+        <strong>Add past exam papers (PDF)</strong>
+        <small>Folaio finds each question, links it to the chapter of your book that answers it, and shows which topics come up most.</small>
+      </label>
+      <div id="papers"></div>
+    </div>
+    <div id="tab-check" class="tabpane">
+      <form id="check-form" class="card check-form">
+        <p class="muted small" style="margin-top:0">Write an answer in your own words. Folaio compares it with your book and shows
+          which key points you covered and which you missed.</p>
+        <label for="chk-q">Question</label>
+        <input id="chk-q" placeholder="e.g. What are the causes of inflation?" autocomplete="off">
+        <label for="chk-a">Your answer</label>
+        <textarea id="chk-a" rows="5" placeholder="Write your answer here…"></textarea>
+        <div class="row" style="margin:12px 0 0"><select id="chk-scope" class="scope"></select>
+          <button class="primary">Check my answer</button></div>
+      </form>
+      <div id="chk-result"></div>
+    </div>
+    <div id="tab-notes" class="tabpane">
+      <div class="row"><select id="notes-doc" class="scope"></select></div>
+      <div id="notes"></div>
+    </div>
+  </section>
+
+  <!-- LIBRARY -->
+  <section id="view-library" class="view">
+    <h2>Library</h2>
+    <label id="drop" class="drop">
+      <input type="file" id="file-input" accept="application/pdf,.folaio,.herapack" multiple hidden>
+      <strong>Drop PDFs or Subject Packs here</strong> or click to choose
+      <small id="inbox-hint"></small>
+    </label>
+    <div class="row pack-row">
+      <button class="ghost" id="share-pack">📦 Share as Subject Pack</button>
+      <label class="ghost button-like">📥 Open a Subject Pack
+        <input type="file" id="pack-input" accept=".folaio,.herapack" hidden></label>
+    </div>
+    <div id="pack-msg" class="small"></div>
+    <div id="docs" class="docs"></div>
+  </section>
+
+  <!-- BRAINS -->
+  <section id="view-brains" class="view">
+    <h2>Brains</h2>
+    <p class="muted small" id="hw"></p>
+
+    <h3>Built in</h3>
+    <div class="brain in-use">
+      <div class="grow"><b>🧠 Folaio Core</b> <span class="badge ready">Always on</span>
+        <div class="muted small">Folaio's own AI. It learns from your PDFs on this computer: search, answers with exact
+          sentences and page numbers, summaries and quizzes.</div>
+        <div class="tech">Built into Folaio · nothing to download · works on any computer</div>
+        <div class="small" id="core-now" style="margin-top:6px"></div></div>
+    </div>
+
+    <h3>✨ Folaio Plus <span class="badge">Optional</span></h3>
+    <p class="muted small">A tiny brain that adds a short "In simple words" explanation under each answer and writes
+      extra summaries. Downloaded once, then it works offline. You can switch it off or remove it any time.</p>
+    <div id="brains" class="brains"></div>
+    <div class="setting" style="margin-top:10px">
+      <div class="grow"><b>📁 Brain folder</b>
+        <div class="muted small">Where downloaded brains are kept. You can choose another folder, for example on an external drive.</div>
+        <code class="small" id="brain-folder"></code>
+        <div class="small warn" id="folder-missing" hidden>This folder can't be found. Is the drive connected?</div>
+        <div id="folder-msg" class="small"></div></div>
+      <div class="actions-col">
+        <button class="ghost" onclick="pickBrainFolder()">Choose folder…</button>
+        <button class="ghost" id="folder-reset" onclick="moveBrains(null)">Use default</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="view">
+    <h2>Settings</h2>
+    <div class="setting">
+      <div class="grow"><b>Brains</b>
+        <div class="muted small">Choose, download or remove Folaio Plus brains.</div></div>
+      <button class="ghost" data-goto="brains">Open Brains</button>
+    </div>
+    <div class="setting">
+      <div class="grow"><b>Your data</b>
+        <div class="muted small">Everything Folaio knows is stored here, on this computer only:</div>
+        <code class="small" id="data-dir"></code></div>
+    </div>
+  </section>
+</main>
+
+<!-- SHARE A SUBJECT PACK -->
+<div id="pack-dialog" class="overlay hidden">
+  <form class="welcome pack-form" id="pack-form">
+    <h1>📦 Share as Subject Pack</h1>
+    <p>One file with your books, past papers, summaries and quiz questions. Classmates or students open it in
+      Folaio and can study straight away, even offline. Your own progress is never included.</p>
+    <label for="pack-name">Pack name</label>
+    <input id="pack-name" placeholder="e.g. Grade 11 Economics" maxlength="100" required>
+    <label for="pack-author">Made by (optional)</label>
+    <input id="pack-author" placeholder="Your name or school" maxlength="100">
+    <label for="pack-desc">Description (optional)</label>
+    <input id="pack-desc" placeholder="What's inside, which exam it's for…" maxlength="300">
+    <label>Include</label>
+    <div id="pack-docs" class="pack-docs"></div>
+    <p class="small muted">Only share material you have the right to share.</p>
+    <div id="pack-err" class="small warn"></div>
+    <div class="actions" style="flex-direction:row;justify-content:flex-end">
+      <button type="button" class="ghost" id="pack-cancel">Cancel</button>
+      <button class="primary" id="pack-go">Create pack</button>
+    </div>
+  </form>
+</div>
+
+<!-- WELCOME / SETUP -->
+<div id="welcome" class="overlay hidden">
+  <div class="welcome">
+    <div class="mark big">F</div>
+    <div id="welcome-body"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

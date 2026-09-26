@@ -1,0 +1,7 @@
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
+pypdfium2>=4.30
+numpy>=1.26
+psutil>=5.9
+llama-cpp-python>=0.3.2
