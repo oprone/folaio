@@ -13,8 +13,10 @@ Using ONLY the passages given, explain the answer to the student's question
 in 2 or 3 short, simple sentences. Do not add facts that are not in the passages."""
 
 
-def explain_messages(question: str, hits: list[Hit]) -> list[dict]:
-    passages = "\n\n".join(h.text for h in hits)
+def explain_messages(question: str, sentences: list[str]) -> list[dict]:
+    """The brain sees only the sentences Folaio Core chose as the answer, so it can
+    only rephrase what's shown above it (whole passages let tiny models wander)."""
+    passages = "\n".join(f"- {s}" for s in sentences)
     return [
         {"role": "system", "content": EXPLAIN_SYSTEM},
         {"role": "user", "content": f"Passages:\n\n{passages}\n\nQuestion: {question}"},

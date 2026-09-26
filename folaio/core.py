@@ -388,7 +388,8 @@ class Folaio:
         # The document's own sentences first (always right), then a tiny brain explains them.
         yield {"type": "sources", "sources": sources}
         yield {"type": "token", "text": exact + "\n\n**In simple words:** "}
-        for piece in self.writer.stream(study.explain_messages(question, hits), max_tokens=160):
+        chosen = [s for s, _ in self.mind.best_sentences(question, [h.text for h in hits], 3)]
+        for piece in self.writer.stream(study.explain_messages(question, chosen), max_tokens=160):
             yield {"type": "token", "text": piece.replace("\n", " ")}
         yield {"type": "done"}
 
