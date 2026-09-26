@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 
 # Folaio data: models, libraries and packs never go into the repository
+data/
 brains/
 Folaio-data/
 HeraAI-data/

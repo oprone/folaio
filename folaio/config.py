@@ -18,53 +18,60 @@ OLD_NAME = "HeraAI"   # the app's name before it became Folaio
 
 
 def data_dir() -> Path:
-    """Where Folaio keeps models and the user's library.
+    """Where Folaio keeps everything: a "data" folder inside Folaio's own folder,
+    so the whole app, with its library and brains, can be copied or carried on a
+    USB drive. Data from older locations is moved in automatically.
 
-    Portable mode: if a folder called ``Folaio-data`` sits next to the app,
-    everything lives there (so the whole brain can be carried on a USB drive).
-    Data from before the rename (a "HeraAI" folder) is moved over automatically.
+    FOLAIO_HOME overrides it (used for tests). If Folaio's folder can't be written
+    to (e.g. an installed app), the computer's usual app-data folder is used.
     """
     if env := os.environ.get("FOLAIO_HOME") or os.environ.get("HERAAI_HOME"):
         return _ready(Path(env))
-    portable, old_portable = ROOT / f"{APP_NAME}-data", ROOT / f"{OLD_NAME}-data"
-    if portable.is_dir() or old_portable.is_dir():
-        return _ready(portable, old_portable)
     if sys.platform == "darwin":
-        parent = Path.home() / "Library" / "Application Support"
+        system = Path.home() / "Library" / "Application Support"
     elif sys.platform == "win32":
-        parent = Path(os.environ.get("APPDATA", Path.home()))
+        system = Path(os.environ.get("APPDATA", Path.home()))
     else:
-        parent = Path.home() / ".local" / "share"
-    return _ready(parent / APP_NAME, parent / OLD_NAME)
+        system = Path.home() / ".local" / "share"
+    local = ROOT / "data"
+    try:
+        local.mkdir(exist_ok=True)
+        probe = local / ".write-test"
+        probe.write_text("ok")
+        probe.unlink()
+    except OSError:
+        return _ready(system / APP_NAME, system / OLD_NAME)
+    older = [ROOT / f"{APP_NAME}-data", ROOT / f"{OLD_NAME}-data", system / APP_NAME, system / OLD_NAME]
+    return _ready(local, *older)
 
 
-def _ready(base: Path, old: Path | None = None) -> Path:
-    if old is not None and not base.exists() and old.is_dir():
+def _ready(base: Path, *older: Path) -> Path:
+    """Use `base`; if it's still empty, first move in the newest older data folder found."""
+    empty = not base.exists() or not any(p.name != ".DS_Store" for p in base.iterdir())
+    old = next((o for o in older if o.is_dir() and any(o.iterdir())), None)
+    if empty and old is not None:
+        import shutil
         try:
-            old.rename(base)
+            base.mkdir(parents=True, exist_ok=True)
+            for item in list(old.iterdir()):
+                shutil.move(str(item), str(base / item.name))   # works across drives too
+            old.rmdir()
         except OSError:
-            return _ready(old)   # couldn't move it: keep using the old folder
+            pass   # anything not moved stays where it was; nothing is deleted
     base.mkdir(parents=True, exist_ok=True)
     return base
 
 
 DATA = data_dir()
-LEGACY_MODELS_DIR = DATA / "models"    # where brains were kept before v0.2
+# Where brains were kept by earlier versions: moved into data/brains on start.
+LEGACY_MODELS_DIRS = (DATA / "models", ROOT / "brains")
 
 
 def _default_models_dir() -> Path:
-    """Brains live in a "brains" folder inside Folaio's own folder.
-    (With FOLAIO_HOME set, inside that folder instead; if Folaio's folder is
-    read-only, e.g. an installed app, in the data folder.)"""
-    folder = DATA / "brains" if os.environ.get("FOLAIO_HOME") else ROOT / "brains"
-    try:
-        folder.mkdir(parents=True, exist_ok=True)
-        probe = folder / ".write-test"
-        probe.write_text("ok")
-        probe.unlink()
-        return folder
-    except OSError:
-        return DATA / "brains"
+    """Brains live in data/brains (the user can choose another folder)."""
+    folder = DATA / "brains"
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
 
 
 DEFAULT_MODELS_DIR = _default_models_dir()   # the user can choose another folder for brains
@@ -142,20 +149,24 @@ def models_dir() -> Path:
 
 
 def move_legacy_brains() -> None:
-    """One-time move of brains from the old default folder to the new one."""
-    if load_settings().get("models_dir") or not LEGACY_MODELS_DIR.is_dir():
-        return
+    """One-time move of brains from the folders earlier versions used."""
+    if load_settings().get("models_dir"):
+        return   # the user chose their own folder: leave it alone
     import shutil
-    for f in LEGACY_MODELS_DIR.glob("*.gguf"):
-        target = DEFAULT_MODELS_DIR / f.name
-        if not target.exists():
-            shutil.move(str(f), str(target))
-    for f in LEGACY_MODELS_DIR.glob("*.part"):
-        f.unlink(missing_ok=True)
-    try:
-        LEGACY_MODELS_DIR.rmdir()   # only if now empty
-    except OSError:
-        pass
+    for old in LEGACY_MODELS_DIRS:
+        if not old.is_dir() or old.resolve() == DEFAULT_MODELS_DIR.resolve():
+            continue
+        for f in old.glob("*.gguf"):
+            target = DEFAULT_MODELS_DIR / f.name
+            if not target.exists():
+                shutil.move(str(f), str(target))
+        for f in old.glob("*.part"):
+            f.unlink(missing_ok=True)
+        (old / ".DS_Store").unlink(missing_ok=True)
+        try:
+            old.rmdir()   # only if now empty
+        except OSError:
+            pass
 
 
 def downloaded_writers() -> list[WriterSpec]:

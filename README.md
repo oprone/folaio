@@ -65,12 +65,18 @@ Folaio opens in your browser at `http://127.0.0.1:8765`. It only listens on your
 
 ### Where your data lives
 
-- macOS: `~/Library/Application Support/Folaio`
-- Windows: `%APPDATA%\Folaio`
-- Brains (Folaio Plus): a `brains` folder inside the Folaio folder by default; change it on the 🧠 Brains page.
-- **Portable mode**: create a folder named `Folaio-data` next to `run.py`, and everything is stored there. Carry it on a USB drive.
+Everything stays inside the Folaio folder, in `data/`:
 
-Any PDF or `.folaio` pack copied into `library/inbox` inside the data folder is added automatically.
+```
+Folaio/
+└── data/
+    ├── brains/        Plus brains (you can choose another folder on the 🧠 Brains page)
+    ├── library/       your PDFs, the database, and inbox/
+    ├── mind/          what Folaio Core has learned
+    └── settings.json
+```
+
+So the whole app, with your library, can be copied to another computer or carried on a USB drive. Any PDF or `.folaio` pack copied into `data/library/inbox` is added automatically. (If the Folaio folder can't be written to, for example an installed app, Folaio uses the computer's usual app-data folder instead.)
 
 ## Roadmap
 
