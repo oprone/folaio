@@ -281,6 +281,15 @@ Ideas and bug reports are welcome in [Issues](https://github.com/oprone/folaio/i
 Pull requests are welcome. Folaio is plain Python (FastAPI, NumPy, SQLite) with a vanilla HTML/CSS/JS
 interface: no build step. Please keep it light: it must stay fast on ordinary laptops.
 
+## Contact
+
+| I want to… | Where |
+|---|---|
+| **Report a bug** or request a feature | [Open an issue](https://github.com/oprone/folaio/issues/new) |
+| **Ask a question** or share an idea | [Discussions](https://github.com/oprone/folaio/discussions) |
+| **Talk privately**: schools, partnerships, press, anything else | ✉️ **[talk@oprone.com](mailto:talk@oprone.com)** |
+| **Report a security problem** | Privately, please: see [SECURITY.md](SECURITY.md) |
+
 ## Credits
 
 [pypdfium2](https://github.com/pypdfium2-team/pypdfium2) (Apache-2.0/BSD), [NumPy](https://numpy.org) (BSD),
