@@ -17,3 +17,6 @@ HeraAI-data/
 # Local machine settings
 .claude/
 .DS_Store
+
+# Marketing files (large, kept out of git)
+marketing/
