@@ -21,8 +21,8 @@ button, input, select { font: inherit; color: inherit; }
 .side { width: 210px; background: var(--side); border-right: 1px solid var(--line);
   display: flex; flex-direction: column; padding: 18px 12px; flex-shrink: 0; }
 .logo { font-weight: 700; font-size: 19px; display: flex; align-items: center; gap: 10px; padding: 0 8px 18px; }
-.mark { background: var(--accent); color: #fff; width: 30px; height: 30px; border-radius: 9px;
-  display: grid; place-items: center; font-size: 17px; }
+.mark { width: 32px; height: 32px; display: block; }
+.logo .ai { color: var(--accent); }
 nav { display: flex; flex-direction: column; gap: 2px; }
 nav button { white-space: nowrap; text-align: left; background: none; border: 0; padding: 9px 12px; border-radius: 8px; cursor: pointer; }
 nav button:hover { background: var(--line); }
@@ -203,7 +203,7 @@ textarea:focus { border-color: var(--accent); }
 .plus-choices { display: flex; gap: 8px; margin: 10px 0; }
 .plus-choice { flex: 1; text-align: left; padding: 10px 12px; line-height: 1.4; }
 .plus-choice:disabled { opacity: .5; cursor: default; }
-.mark.big { width: 54px; height: 54px; font-size: 28px; border-radius: 15px; margin: 0 auto 16px; }
+.mark.big { width: 72px; height: 72px; margin: 0 auto 16px; }
 
 /* brain */
 .brains { display: flex; flex-direction: column; gap: 10px; }
@@ -223,11 +223,11 @@ h3 { margin: 22px 0 10px; font-size: 16px; }
     border-right: 0; border-bottom: 1px solid var(--line); }
   .side nav { display: contents; }          /* logo, menu and Settings flow together */
   nav button { padding: 6px 9px; font-size: 14px; }
-  .logo { padding: 0 6px 0 0; }
+  .logo { padding: 0 6px 0 0; font-size: 0; }   /* icon only on phones */
+  .logo .mark { width: 30px; height: 30px; }
   .task, .topic, .pq, .focus-item { flex-wrap: wrap; }
   .task .grow, .pq .grow, .topic .grow, .focus-item .grow { flex-basis: calc(100% - 48px); }
   .task .btns, .pq .btns { margin-left: auto; }
-  .logo { padding: 0 8px; font-size: 0; } .logo .mark { font-size: 17px; }
   nav { flex-direction: row; }
   .activity { display: none; }
   .bottom-nav { margin: 0; padding: 0; }

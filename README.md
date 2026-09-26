@@ -1,3 +1,4 @@
+<p align="center"><img src="web/brand/logo.svg" width="110" alt="Folaio logo"></p>
 <h1 align="center">Folaio</h1>
 <p align="center"><b>An AI that learns from your PDFs. Its own AI, 100% offline, light enough for any computer.</b></p>
 

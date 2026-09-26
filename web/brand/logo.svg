@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Folaio">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fb923c"/>
+      <stop offset="1" stop-color="#c2410c"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+  <!-- the spark: the AI that understands your pages -->
+  <path d="M256 64 Q266 122 318 132 Q266 142 256 200 Q246 142 194 132 Q246 122 256 64 Z" fill="#fff"/>
+  <!-- the open book (folio) -->
+  <path d="M248 232 C206 204 150 198 104 210 L104 404 C150 392 206 398 248 426 Z" fill="#fff"/>
+  <path d="M264 232 C306 204 362 198 408 210 L408 404 C362 392 306 398 264 426 Z" fill="#fff"/>
+  <!-- page lines -->
+  <g stroke="#ea580c" stroke-width="10" stroke-linecap="round" opacity=".45" fill="none">
+    <path d="M140 262 C170 256 198 258 222 268"/>
+    <path d="M140 302 C170 296 198 298 222 308"/>
+    <path d="M290 268 C314 258 342 256 372 262"/>
+    <path d="M290 308 C314 298 342 296 372 302"/>
+  </g>
+</svg>
