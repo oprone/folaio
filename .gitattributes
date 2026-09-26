@@ -1,0 +1,5 @@
+# Keep each start file in the format its system needs
+*.bat text eol=crlf
+*.command text eol=lf
+*.sh text eol=lf
+*.py text eol=lf

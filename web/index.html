@@ -192,6 +192,12 @@
     <h3>Folaio Plus <span class="badge">Optional</span></h3>
     <p class="muted small">A tiny brain that adds a short "In simple words" explanation under each answer and writes
       extra summaries. Downloaded once, then it works offline. You can switch it off or remove it any time.</p>
+    <div id="engine-missing" class="banner" hidden>
+      <b>One more step to use Folaio Plus.</b> The engine that runs Plus brains isn't installed yet.
+      Stop Folaio, then run the command for your computer in the Folaio folder (see the README for details):
+      <div class="small" style="margin-top:8px"><b>Mac / Linux:</b> <code>.venv/bin/pip install -r requirements-plus.txt</code><br>
+      <b>Windows:</b> <code>.venv\Scripts\pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu</code></div>
+    </div>
     <div id="brains" class="brains"></div>
     <div class="setting" style="margin-top:10px">
       <div class="grow"><b>Brain folder</b>

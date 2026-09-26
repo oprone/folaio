@@ -1,0 +1,3 @@
+# Optional: the engine for Folaio Plus brains ("In simple words" explanations).
+# Folaio works fully without it. See the README for how to install it on your system.
+llama-cpp-python>=0.3.2

@@ -111,25 +111,99 @@ everything in one portable folder you can copy to a USB drive.
 
 ---
 
-## Get started
+## Install and start
 
-> One-click installers for macOS and Windows are on the way. For now, Folaio runs from source.
+> One-click installers are on the way. Until then, installing takes about 5 minutes and **no typing of code** on Mac and Windows:
+> you install Python once, download Folaio, and double-click **Start Folaio**.
 
-You need **Python 3.10 or newer**.
+Pick your computer:
+
+<details open>
+<summary><b>🍎 Mac</b></summary>
+
+1. **Install Python** (skip if you already have it)
+   - Go to [python.org/downloads](https://www.python.org/downloads/), click **Download Python**, open the file and follow the installer.
+
+2. **Download Folaio**
+   - On this page, click the green **Code** button → **Download ZIP**.
+   - Open your **Downloads** folder and double-click the ZIP to unzip it. Move the **Folaio** folder wherever you like
+     (for example, *Documents*).
+
+3. **Start Folaio**
+   - Open the Folaio folder and double-click **Start Folaio.command**.
+   - The **first time**, macOS may say it's from an unidentified developer. **Right-click** the file → **Open** → **Open**.
+     You only need to do this once.
+   - The first start sets things up (1–2 minutes). Then Folaio **opens in your browser** automatically.
+
+4. **Next time:** just double-click **Start Folaio.command** again. To stop Folaio, close its Terminal window.
+
+</details>
+
+<details>
+<summary><b>🪟 Windows</b></summary>
+
+1. **Install Python** (skip if you already have it)
+   - Go to [python.org/downloads](https://www.python.org/downloads/), click **Download Python**, and run the installer.
+   - ⚠️ On the first screen, **tick "Add python.exe to PATH"**, then click **Install Now**.
+
+2. **Download Folaio**
+   - On this page, click the green **Code** button → **Download ZIP**.
+   - In your **Downloads** folder, right-click the ZIP → **Extract All…** → **Extract**.
+
+3. **Start Folaio**
+   - Open the Folaio folder and double-click **Start Folaio.bat**.
+   - If Windows shows *"Windows protected your PC"*, click **More info** → **Run anyway**. You only need to do this once.
+   - The first start sets things up (1–2 minutes). Then Folaio **opens in your browser** automatically.
+
+4. **Next time:** just double-click **Start Folaio.bat** again. To stop Folaio, close its black window.
+
+</details>
+
+<details>
+<summary><b>🐧 Linux</b></summary>
+
+1. **Install Python and Git** (Ubuntu/Debian; use your distribution's package manager otherwise):
+   ```bash
+   sudo apt install python3 python3-venv git
+   ```
+2. **Download and start Folaio:**
+   ```bash
+   git clone https://github.com/oprone/folaio.git
+   cd folaio
+   ./start-folaio.sh
+   ```
+   The first start sets things up (1–2 minutes). Then Folaio opens in your browser.
+3. **Next time:** run `./start-folaio.sh` in the Folaio folder. Press **Ctrl+C** to stop.
+
+</details>
+
+**Folaio runs at `http://127.0.0.1:8765`** in your browser, only on your own computer. Drop in a PDF and start asking.
+
+### Optional: Folaio Plus ("In simple words" explanations)
+
+Folaio works fully without this. Plus adds a short, simple explanation under each answer using a tiny AI
+brain (0.3–0.4 GB) that runs offline. It needs one extra component, the *engine*:
+
+| Computer | Install the engine (stop Folaio first, then run this in the Folaio folder) |
+|---|---|
+| **Mac** | Open **Terminal** in the Folaio folder and run: `.venv/bin/pip install -r requirements-plus.txt` (if asked, install the *Command Line Developer Tools*) |
+| **Windows** | Open **Command Prompt** in the Folaio folder and run: `.venv\Scripts\pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu` |
+| **Linux** | `sudo apt install build-essential cmake`, then `.venv/bin/pip install -r requirements-plus.txt` |
+
+Then start Folaio again, open the **Brains** page and download **Mini** or **Small**.
+
+<details>
+<summary><b>For developers</b></summary>
 
 ```bash
-git clone https://github.com/oprone/folaio.git
-cd folaio
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt  # the first install builds the optional AI engine; allow a few minutes
+git clone https://github.com/oprone/folaio.git && cd folaio
+python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements.txt                          # + requirements-plus.txt for Folaio Plus
 python run.py
 ```
+Needs Python 3.10+. All data (library, what Folaio learned, brains) lives in `data/`.
 
-Folaio opens in your browser at `http://127.0.0.1:8765`. Drop in a PDF and start asking.
-
-**Optional:** on the **Brains** page, download a tiny *Folaio Plus* brain (0.3–0.4 GB, once) for
-"In simple words" explanations. Folaio works fully without it.
+</details>
 
 ---
 

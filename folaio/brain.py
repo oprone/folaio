@@ -42,8 +42,15 @@ class Writer:
         return config.active_writer()
 
     @property
+    def engine_installed(self) -> bool:
+        """Is the optional llama.cpp engine installed (requirements-plus.txt)?"""
+        import importlib.util
+        return importlib.util.find_spec("llama_cpp") is not None
+
+    @property
     def available(self) -> bool:
-        return self.spec is not None
+        """A Plus brain is downloaded, switched on, and the engine to run it is installed."""
+        return self.spec is not None and self.engine_installed
 
     @property
     def loaded(self) -> bool:

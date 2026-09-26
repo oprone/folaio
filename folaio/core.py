@@ -549,6 +549,7 @@ class Folaio:
             "hardware": config.hardware() | {"disk_free_gb": config.disk_free_gb()},
             "activity": self.activity,
             "brain": {
+                "engine": self.writer.engine_installed,   # llama.cpp installed (optional)
                 "installed": asdict(spec) if spec else None,
                 "loaded": self.writer.loaded,
                 "recommended": rec.key,

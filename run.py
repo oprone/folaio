@@ -18,6 +18,6 @@ def free_port(preferred: int = 8765) -> int:
 if __name__ == "__main__":
     port = free_port()
     url = f"http://127.0.0.1:{port}"
-    print(f"Folaio is running at {url}  (press Ctrl+C to stop)")
+    print(f"Folaio is running at {url}  (press Ctrl+C to stop)", flush=True)
     threading.Timer(1.5, lambda: webbrowser.open(url)).start()
     uvicorn.run("folaio.server:app", host="127.0.0.1", port=port, log_level="warning")
