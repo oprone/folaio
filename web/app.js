@@ -621,7 +621,7 @@ async function loadMap() {
   const all = map.flatMap((d) => d.sections.map((s) => ({ ...s, doc_id: d.doc_id, doc: d.name })));
   const rank = { weak: 0, shaky: 1, new: 2 };
   const focus = all.filter((s) => s.status in rank)
-    .sort((a, b) => rank[a.status] - rank[b.status] || a.strength - b.strength).slice(0, 3);
+    .sort((a, b) => rank[a.status] - rank[b.status] || a.strength - b.strength || b.exam_hits - a.exam_hits).slice(0, 3);
   const attrs = (s) => `data-doc="${s.doc_id}" data-section="${s.index}" data-from="${s.page_from}" data-to="${s.page_to}" data-title="${esc(s.title)}"`;
 
   let html = "";

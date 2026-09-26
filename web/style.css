@@ -47,7 +47,7 @@ body { margin: 0; display: flex; background: var(--bg); color: var(--text); font
   -webkit-font-smoothing: antialiased; }
 button, input, select, textarea { font: inherit; color: inherit; }
 a { color: var(--accent-text); }
-.hidden { display: none !important; }
+.hidden, [hidden] { display: none !important; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
 .warn { color: var(--bad); }
