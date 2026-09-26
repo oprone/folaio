@@ -178,6 +178,11 @@ def past_papers():
     return folaio.past_papers()
 
 
+@app.get("/api/section-of/{chunk_id}")
+def section_of(chunk_id: int):
+    return folaio.section_of_chunk(chunk_id) or {}
+
+
 @app.get("/api/map")
 def knowledge_map():
     return folaio.knowledge_map()
@@ -191,11 +196,15 @@ def grade(card_id: int, body: Grade):
 
 class Settings(BaseModel):
     welcomed: bool | None = None
+    name: str | None = None      # shown in the greeting
 
 
 @app.post("/api/settings")
 def update_settings(body: Settings):
-    return config.save_settings(**body.model_dump(exclude_none=True))
+    changes = body.model_dump(exclude_none=True)
+    if "name" in changes:
+        changes["name"] = changes["name"].strip()[:40]
+    return config.save_settings(**changes)
 
 
 def _check_brain(key: str):

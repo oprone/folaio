@@ -1,72 +1,129 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="auto">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Folaio</title>
 <link rel="icon" type="image/svg+xml" href="brand/logo.svg">
+<script>
+  // Apply the saved theme before the page paints (no flash of the wrong theme).
+  try { document.documentElement.dataset.theme = localStorage.getItem("folaio-theme") || "auto"; } catch {}
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- Icon set (line icons). Use: <svg class="i"><use href="#i-name"/></svg> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-ask" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4-4"/></symbol>
+    <symbol id="i-study" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5z"/><path d="M6 12.2V17c3 2.7 9 2.7 12 0v-4.8M22 10v6"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
+    <symbol id="i-brains" viewBox="0 0 24 24"><path d="M12 3l1.8 5.4L19 10l-5.2 1.7L12 17l-1.8-5.3L5 10l5.2-1.6z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+    <symbol id="i-auto" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 19V5"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-quiz" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+    <symbol id="i-notes" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+    <symbol id="i-paper" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.1.3 1.2 1.3 2.6 2.5 2.6z"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></symbol>
+    <symbol id="i-open" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></symbol>
+  </defs>
+</svg>
+
 <aside class="side">
-  <div class="logo"><img class="mark" src="brand/logo.svg" alt=""><span>Fol<span class="ai">ai</span>o</span></div>
-  <nav>
-    <button data-view="ask" class="active">💬 Ask</button>
-    <button data-view="search">🔎 Search</button>
-    <button data-view="study">🎓 Study</button>
-    <button data-view="library">📚 Library</button>
-    <button data-view="brains">🧠 Brains</button>
+  <div class="logo"><img class="mark" src="brand/logo.svg" alt="Folaio"><span>Fol<span class="ai">ai</span>o</span></div>
+  <nav aria-label="Main">
+    <button data-view="ask" class="active"><svg class="i"><use href="#i-ask"/></svg>Ask</button>
+    <button data-view="search"><svg class="i"><use href="#i-search"/></svg>Search</button>
+    <button data-view="study"><svg class="i"><use href="#i-study"/></svg>Study<span class="nav-count hidden" id="due-count"></span></button>
+    <button data-view="library"><svg class="i"><use href="#i-library"/></svg>Library</button>
+    <button data-view="brains"><svg class="i"><use href="#i-brains"/></svg>Brains</button>
   </nav>
-  <nav class="bottom-nav">
-    <button data-view="settings">⚙️ Settings</button>
-  </nav>
-  <div class="activity" id="activity">Starting…</div>
+  <div class="side-foot">
+    <nav class="bottom-nav"><button data-view="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</button></nav>
+    <div class="theme-switch" role="radiogroup" aria-label="Theme">
+      <button data-theme-choice="light" title="Light theme" aria-label="Light theme"><svg class="i sm"><use href="#i-sun"/></svg></button>
+      <button data-theme-choice="dark" title="Dark theme" aria-label="Dark theme"><svg class="i sm"><use href="#i-moon"/></svg></button>
+      <button data-theme-choice="auto" title="Match my computer" aria-label="Match my computer"><svg class="i sm"><use href="#i-auto"/></svg></button>
+    </div>
+    <div class="activity" id="activity"><span class="dot"></span><span>Starting…</span></div>
+  </div>
 </aside>
 
 <main>
   <!-- ASK -->
   <section id="view-ask" class="view active">
-    <div id="chat" class="chat">
-      <div class="empty" id="chat-empty">
-        <h1>Ask your documents anything</h1>
-        <p>Answers come only from your PDFs, with the page they came from.</p>
+    <div class="ask-home" id="ask-home">
+      <div class="hero">
+        <img src="brand/logo.svg" alt="">
+        <h1 id="greeting">Hello</h1>
+        <p>Ask anything about your books. Answers come from your pages.</p>
+      </div>
+      <form class="composer" id="ask-form">
+        <textarea id="ask-input" rows="3" placeholder="Ask a question, e.g. What are the causes of inflation?" aria-label="Your question"></textarea>
+        <div class="composer-bar">
+          <select id="ask-scope" class="scope" title="Which books to use" aria-label="Which books to use"></select>
+          <span class="hint"><kbd>Enter</kbd> to ask · <kbd>Shift</kbd> + <kbd>Enter</kbd> new line</span>
+          <button class="send" title="Ask" aria-label="Ask"><svg class="i"><use href="#i-send"/></svg></button>
+        </div>
+      </form>
+      <div class="suggest" id="suggest"></div>
+      <div class="glance" id="glance"></div>
+    </div>
+
+    <div class="ask-chat hidden" id="ask-chat">
+      <div class="thread" id="chat"></div>
+      <div class="dock">
+        <form class="composer" id="dock-form">
+          <textarea id="dock-input" rows="1" placeholder="Ask a follow-up question…" aria-label="Your question"></textarea>
+          <select id="dock-scope" class="scope" title="Which books to use" aria-label="Which books to use"></select>
+          <button class="send" title="Ask" aria-label="Ask"><svg class="i"><use href="#i-send"/></svg></button>
+        </form>
       </div>
     </div>
-    <form id="ask-form" class="composer">
-      <select id="ask-scope" class="scope" title="Which documents to use"></select>
-      <input id="ask-input" placeholder="e.g. What are the causes of inflation?" autocomplete="off">
-      <button class="primary">Ask</button>
-    </form>
   </section>
 
   <!-- SEARCH -->
-  <section id="view-search" class="view">
-    <h2>Search your library</h2>
+  <section id="view-search" class="view"><div class="inner">
+    <div class="page-head"><h2>Search</h2><p class="sub">Find any word or idea across all your books.</p></div>
     <form id="search-form" class="row">
       <input id="search-input" placeholder="Search words or meaning…" autocomplete="off">
-      <button class="primary">Search</button>
+      <button class="primary"><svg class="i sm"><use href="#i-search"/></svg>Search</button>
     </form>
     <div id="search-results" class="results"></div>
-  </section>
+  </div></section>
 
   <!-- STUDY -->
-  <section id="view-study" class="view">
-    <h2>Study</h2>
+  <section id="view-study" class="view"><div class="inner">
+    <div class="page-head"><h2>Study</h2><p class="sub">Your plan, your progress and practice, all from your own books.</p></div>
     <div class="stats" id="stats"></div>
-    <div class="tabs">
-      <button class="tab active" data-tab="today">📅 Today</button>
-      <button class="tab" data-tab="map">🗺️ My progress</button>
-      <button class="tab" data-tab="quiz">Quiz</button>
-      <button class="tab" data-tab="notes">Summaries</button>
-      <button class="tab" data-tab="papers">📝 Past papers</button>
-      <button class="tab" data-tab="check">✍️ Check my answer</button>
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="today"><svg class="i sm"><use href="#i-calendar"/></svg>Today</button>
+      <button class="tab" data-tab="map"><svg class="i sm"><use href="#i-map"/></svg>My progress</button>
+      <button class="tab" data-tab="quiz"><svg class="i sm"><use href="#i-quiz"/></svg>Quiz</button>
+      <button class="tab" data-tab="notes"><svg class="i sm"><use href="#i-notes"/></svg>Summaries</button>
+      <button class="tab" data-tab="papers"><svg class="i sm"><use href="#i-paper"/></svg>Past papers</button>
+      <button class="tab" data-tab="check"><svg class="i sm"><use href="#i-pen"/></svg>Check my answer</button>
     </div>
-    <div id="tab-today" class="tabpane active">
-      <div id="today"></div>
-    </div>
-    <div id="tab-map" class="tabpane">
-      <div id="map"></div>
-    </div>
+    <div id="tab-today" class="tabpane active"><div id="today"></div></div>
+    <div id="tab-map" class="tabpane"><div id="map"></div></div>
     <div id="tab-quiz" class="tabpane">
       <div id="practising" class="banner hidden"></div>
       <div class="row"><select id="quiz-scope" class="scope"></select></div>
@@ -75,6 +132,7 @@
     <div id="tab-papers" class="tabpane">
       <label class="drop" id="paper-drop">
         <input type="file" id="paper-input" accept="application/pdf" multiple hidden>
+        <svg class="i"><use href="#i-upload"/></svg>
         <strong>Add past exam papers (PDF)</strong>
         <small>Folaio finds each question, links it to the chapter of your book that answers it, and shows which topics come up most.</small>
       </label>
@@ -88,68 +146,81 @@
         <input id="chk-q" placeholder="e.g. What are the causes of inflation?" autocomplete="off">
         <label for="chk-a">Your answer</label>
         <textarea id="chk-a" rows="5" placeholder="Write your answer here…"></textarea>
-        <div class="row" style="margin:12px 0 0"><select id="chk-scope" class="scope"></select>
-          <button class="primary">Check my answer</button></div>
+        <div class="row" style="margin:14px 0 0"><select id="chk-scope" class="scope"></select>
+          <button class="primary"><svg class="i sm"><use href="#i-check"/></svg>Check my answer</button></div>
       </form>
-      <div id="chk-result"></div>
+      <div id="chk-result" style="margin-top:14px"></div>
     </div>
     <div id="tab-notes" class="tabpane">
       <div class="row"><select id="notes-doc" class="scope"></select></div>
       <div id="notes"></div>
     </div>
-  </section>
+  </div></section>
 
   <!-- LIBRARY -->
-  <section id="view-library" class="view">
-    <h2>Library</h2>
+  <section id="view-library" class="view"><div class="inner">
+    <div class="page-head"><h2>Library</h2><p class="sub">Your textbooks, notes and past papers. Folaio learns everything you add.</p></div>
     <label id="drop" class="drop">
       <input type="file" id="file-input" accept="application/pdf,.folaio,.herapack" multiple hidden>
-      <strong>Drop PDFs or Subject Packs here</strong> or click to choose
+      <svg class="i"><use href="#i-upload"/></svg>
+      <strong>Drop PDFs or Subject Packs here</strong>
+      <small>or click to choose files</small>
       <small id="inbox-hint"></small>
     </label>
     <div class="row pack-row">
-      <button class="ghost" id="share-pack">📦 Share as Subject Pack</button>
-      <label class="ghost button-like">📥 Open a Subject Pack
+      <button class="ghost" id="share-pack"><svg class="i sm"><use href="#i-share"/></svg>Share as Subject Pack</button>
+      <label class="ghost button-like"><svg class="i sm"><use href="#i-open"/></svg>Open a Subject Pack
         <input type="file" id="pack-input" accept=".folaio,.herapack" hidden></label>
     </div>
     <div id="pack-msg" class="small"></div>
     <div id="docs" class="docs"></div>
-  </section>
+  </div></section>
 
   <!-- BRAINS -->
-  <section id="view-brains" class="view">
-    <h2>Brains</h2>
-    <p class="muted small" id="hw"></p>
+  <section id="view-brains" class="view"><div class="inner">
+    <div class="page-head"><h2>Brains</h2><p class="sub" id="hw"></p></div>
 
     <h3>Built in</h3>
     <div class="brain in-use">
-      <div class="grow"><b>🧠 Folaio Core</b> <span class="badge ready">Always on</span>
+      <div class="grow"><b>Folaio Core</b> <span class="badge ready">Always on</span>
         <div class="muted small">Folaio's own AI. It learns from your PDFs on this computer: search, answers with exact
           sentences and page numbers, summaries and quizzes.</div>
         <div class="tech">Built into Folaio · nothing to download · works on any computer</div>
         <div class="small" id="core-now" style="margin-top:6px"></div></div>
     </div>
 
-    <h3>✨ Folaio Plus <span class="badge">Optional</span></h3>
+    <h3>Folaio Plus <span class="badge">Optional</span></h3>
     <p class="muted small">A tiny brain that adds a short "In simple words" explanation under each answer and writes
       extra summaries. Downloaded once, then it works offline. You can switch it off or remove it any time.</p>
     <div id="brains" class="brains"></div>
     <div class="setting" style="margin-top:10px">
-      <div class="grow"><b>📁 Brain folder</b>
+      <div class="grow"><b>Brain folder</b>
         <div class="muted small">Where downloaded brains are kept. You can choose another folder, for example on an external drive.</div>
-        <code class="small" id="brain-folder"></code>
+        <code id="brain-folder"></code>
         <div class="small warn" id="folder-missing" hidden>This folder can't be found. Is the drive connected?</div>
         <div id="folder-msg" class="small"></div></div>
       <div class="actions-col">
-        <button class="ghost" onclick="pickBrainFolder()">Choose folder…</button>
+        <button class="ghost" onclick="pickBrainFolder()"><svg class="i sm"><use href="#i-folder"/></svg>Choose folder…</button>
         <button class="ghost" id="folder-reset" onclick="moveBrains(null)">Use default</button>
       </div>
     </div>
-  </section>
+  </div></section>
 
   <!-- SETTINGS -->
-  <section id="view-settings" class="view">
-    <h2>Settings</h2>
+  <section id="view-settings" class="view"><div class="inner">
+    <div class="page-head"><h2>Settings</h2></div>
+    <div class="setting">
+      <div class="grow"><b>Your name</b>
+        <div class="muted small">Used to greet you on the Ask page. Stays on this computer.</div></div>
+      <input id="your-name" placeholder="e.g. Lalith" maxlength="40" style="max-width:220px">
+    </div>
+    <div class="setting">
+      <div class="grow"><b>Theme</b>
+        <div class="muted small">Light, dark, or match your computer. Also in the sidebar.</div></div>
+      <select id="theme-select" class="scope">
+        <option value="light">Light</option><option value="dark">Dark</option><option value="auto">Match my computer</option>
+      </select>
+    </div>
     <div class="setting">
       <div class="grow"><b>Brains</b>
         <div class="muted small">Choose, download or remove Folaio Plus brains.</div></div>
@@ -158,15 +229,15 @@
     <div class="setting">
       <div class="grow"><b>Your data</b>
         <div class="muted small">Everything Folaio knows is stored here, on this computer only:</div>
-        <code class="small" id="data-dir"></code></div>
+        <code id="data-dir"></code></div>
     </div>
-  </section>
+  </div></section>
 </main>
 
 <!-- SHARE A SUBJECT PACK -->
 <div id="pack-dialog" class="overlay hidden">
   <form class="welcome pack-form" id="pack-form">
-    <h1>📦 Share as Subject Pack</h1>
+    <h1>Share as Subject Pack</h1>
     <p>One file with your books, past papers, summaries and quiz questions. Classmates or students open it in
       Folaio and can study straight away, even offline. Your own progress is never included.</p>
     <label for="pack-name">Pack name</label>
@@ -186,13 +257,15 @@
   </form>
 </div>
 
-<!-- WELCOME / SETUP -->
+<!-- WELCOME -->
 <div id="welcome" class="overlay hidden">
   <div class="welcome">
     <img class="mark big" src="brand/logo.svg" alt="Folaio">
     <div id="welcome-body"></div>
   </div>
 </div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script src="app.js"></script>
 </body>

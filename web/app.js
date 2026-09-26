@@ -15,9 +15,37 @@ const post = (path, body) => api(path, { method: "POST", headers: { "Content-Typ
 const setHTML = (el, html) => { if (el.dataset.html !== html) { el.dataset.html = html; el.innerHTML = html; } };
 const pdfLink = (docId, page) => `/api/documents/${docId}/file#page=${page}`;
 const gb = (b) => (b / 1e9).toFixed(1) + " GB";
+const icon = (name, cls = "sm") => `<svg class="i ${cls}"><use href="#i-${name}"/></svg>`;
+const store = {
+  get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
 
 let docs = [];
 let status = null;
+
+/* ---------- toasts (instead of pop-up alerts) ---------- */
+function toast(message, kind = "") {
+  const el = document.createElement("div");
+  el.className = `toast ${kind}`;
+  el.textContent = message;
+  $("#toasts").appendChild(el);
+  setTimeout(() => el.remove(), kind === "bad" ? 6000 : 3500);
+}
+
+/* ---------- theme ---------- */
+function setTheme(choice) {
+  document.documentElement.dataset.theme = choice;
+  store.set("folaio-theme", choice);
+  $$("[data-theme-choice]").forEach((b) => {
+    b.classList.toggle("on", b.dataset.themeChoice === choice);
+    b.setAttribute("aria-checked", b.dataset.themeChoice === choice);
+  });
+  $("#theme-select").value = choice;
+}
+$$("[data-theme-choice]").forEach((b) => (b.onclick = () => setTheme(b.dataset.themeChoice)));
+$("#theme-select").onchange = (e) => setTheme(e.target.value);
+setTheme(store.get("folaio-theme", "auto"));
 
 /* ---------- navigation ---------- */
 function show(view) {
@@ -26,57 +54,121 @@ function show(view) {
   if (view === "study") loadStudy();
   if (view === "brains" && status) renderBrains();
   if (view === "settings" && status) renderSettings();
-  if (view === "ask") $("#ask-input").focus();
+  if (view === "ask") (inChat() ? $("#dock-input") : $("#ask-input")).focus();
   if (view === "search") $("#search-input").focus();
 }
 $$("nav button").forEach((b) => (b.onclick = () => show(b.dataset.view)));
-document.addEventListener("click", (e) => { if (e.target.dataset.goto) show(e.target.dataset.goto); });
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-goto]");
+  if (t) show(t.dataset.goto);
+});
+document.addEventListener("keydown", (e) => {
+  // "/" jumps to the question box (unless you're already typing somewhere)
+  if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) {
+    e.preventDefault();
+    show("ask");
+  }
+  if (e.key === "Escape") $$(".overlay:not(.hidden)").forEach((o) => o.id === "pack-dialog" && o.classList.add("hidden"));
+});
 
-/* ---------- light markdown for answers ---------- */
-function renderAnswer(text, sources) {
+/* ---------- answers ---------- */
+function cites(html, sources) {
+  return html.replace(/\[(\d+)\]/g, (m, n) => {
+    const s = sources[n - 1];
+    return s ? `<a class="cite" href="${pdfLink(s.doc_id, s.page)}" target="_blank" title="Open ${esc(s.doc_name)} at page ${s.page}">p. ${s.page}</a>` : "";
+  });
+}
+
+function formatText(text, sources) {
   const lines = esc(text).split("\n");
   let html = "", inList = false;
   for (let line of lines) {
-    line = line.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
-    line = line.replace(/\[(\d+)\]/g, (m, n) => {
-      const s = sources[n - 1];
-      return s ? `<a class="cite" href="${pdfLink(s.doc_id, s.page)}" target="_blank" title="${esc(s.doc_name)}, page ${s.page}">${n}</a>` : m;
-    });
+    line = cites(line.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>"), sources);
     const item = line.match(/^\s*(?:[-*•]|\d+\.)\s+(.*)/);
-    if (item) { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${item[1]}</li>`; continue; }
+    if (item) { if (!inList) { html += `<ul class="points">`; inList = true; } html += `<li><span>${item[1]}</span></li>`; continue; }
     if (inList) { html += "</ul>"; inList = false; }
     if (line.trim()) html += `<p>${line}</p>`;
   }
   return html + (inList ? "</ul>" : "");
 }
 
-function renderSources(sources) {
-  if (!sources.length) return "";
-  return `<details class="sources"><summary>${sources.length} sources</summary>` +
-    sources.map((s, i) => `<div class="source"><a href="${pdfLink(s.doc_id, s.page)}" target="_blank">[${i + 1}] ${esc(s.doc_name)} · p.${s.page}</a><br>${esc(s.text.slice(0, 260))}…</div>`).join("") +
-    "</details>";
+// An answer card: the book's own sentences (with page chips), then "In simple words" from a Plus brain.
+function answerCard(text, sources, done) {
+  const [book, simple] = text.split("**In simple words:**");
+  const names = [...new Set(sources.map((s) => s.doc_name.replace(/\.pdf$/i, "")))];
+  let html = sources.length ? `<div class="label">${icon("library")}From your book · ${esc(names.join(", "))}</div>` : "";
+  html += book.trim() ? formatText(book.trim(), sources) : `<div class="thinking"><span></span><span></span><span></span></div>`;
+  if (simple !== undefined) {
+    html += `<div class="simple"><div class="label">${icon("brains")}In simple words</div>${
+      simple.trim() ? esc(simple.trim()) : `<div class="thinking"><span></span><span></span><span></span></div>`}</div>`;
+  }
+  if (done && sources.length) {
+    html += `<div class="answer-actions">
+      <button class="ghost quiz-this">${icon("quiz")}Quiz me on this</button>
+      <button class="ghost copy-this">${icon("copy")}Copy</button>
+      <button class="sources-toggle">${icon("down")}${sources.length} source${sources.length > 1 ? "s" : ""}</button>
+    </div>
+    <div class="source-list hidden">${sources.map((s) => `<div class="source">
+      <a href="${pdfLink(s.doc_id, s.page)}" target="_blank">${esc(s.doc_name)} · page ${s.page}</a><br>${esc(s.text.slice(0, 280))}…</div>`).join("")}</div>`;
+  }
+  return html;
 }
 
 /* ---------- ask ---------- */
-$("#ask-form").onsubmit = async (e) => {
-  e.preventDefault();
-  const q = $("#ask-input").value.trim();
-  if (!q) return;
-  $("#ask-input").value = "";
-  $("#chat-empty")?.remove();
+const inChat = () => !$("#ask-chat").classList.contains("hidden");
+
+function autoGrow(t) {
+  t.style.height = "auto";
+  t.style.height = Math.min(t.scrollHeight, 240) + "px";
+}
+for (const [form, input] of [["#ask-form", "#ask-input"], ["#dock-form", "#dock-input"]]) {
+  const t = $(input);
+  t.addEventListener("input", () => autoGrow(t));
+  t.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $(form).requestSubmit(); }
+  });
+  $(form).onsubmit = (e) => {
+    e.preventDefault();
+    const q = t.value.trim();
+    if (!q) return;
+    t.value = "";
+    autoGrow(t);
+    const scope = (form === "#ask-form" ? $("#ask-scope") : $("#dock-scope")).value;
+    $("#dock-scope").value = scope;
+    ask(q, scope);
+  };
+}
+
+function newConversation() {
+  $("#chat").innerHTML = "";
+  $("#ask-chat").classList.add("hidden");
+  $("#ask-home").classList.remove("hidden");
+  $("#ask-scope").value = $("#dock-scope").value;
+  loadAskHome();
+  $("#ask-input").focus();
+}
+
+async function ask(q, scope) {
+  $("#ask-home").classList.add("hidden");
+  $("#ask-chat").classList.remove("hidden");
   const chat = $("#chat");
+  if (!chat.children.length) {
+    chat.insertAdjacentHTML("beforeend",
+      `<button class="ghost new-chat" onclick="newConversation()">${icon("plus")}New question</button>`);
+  }
   chat.insertAdjacentHTML("beforeend", `<div class="msg user">${esc(q)}</div>`);
   const bot = document.createElement("div");
   bot.className = "msg bot";
-  bot.innerHTML = `<span class="typing muted">Finding the right pages</span>`;
+  bot.innerHTML = `<img src="brand/logo.svg" alt=""><div class="answer"><div class="thinking"><span></span><span></span><span></span></div></div>`;
   chat.appendChild(bot);
-  chat.scrollTop = chat.scrollHeight;
-  const btn = $("#ask-form button");
-  btn.disabled = true;
+  const card = bot.querySelector(".answer");
+  const scroll = () => (chat.scrollTop = chat.scrollHeight);
+  scroll();
+  $$(".send").forEach((b) => (b.disabled = true));
+  $("#dock-input").focus();
 
   let sources = [], text = "";
   try {
-    const scope = $("#ask-scope").value;
     const r = await fetch("/api/ask", { method: "POST", headers: { "Content-Type": "application/json", "X-Folaio": "1" },
       body: JSON.stringify({ question: q, doc_id: scope ? Number(scope) : null }) });
     const reader = r.body.getReader();
@@ -90,20 +182,83 @@ $("#ask-form").onsubmit = async (e) => {
       while ((nl = buf.indexOf("\n")) >= 0) {
         const ev = JSON.parse(buf.slice(0, nl));
         buf = buf.slice(nl + 1);
-        if (ev.type === "sources") { sources = ev.sources; bot.innerHTML = `<span class="typing muted">Thinking</span>`; }
-        if (ev.type === "token") { text += ev.text; bot.innerHTML = `<div class="typing">${renderAnswer(text, sources)}</div>`; }
-        if (ev.type === "error") text += `\n\n⚠️ ${ev.text}`;
-        chat.scrollTop = chat.scrollHeight;
+        if (ev.type === "sources") sources = ev.sources;
+        if (ev.type === "token") { text += ev.text; card.innerHTML = answerCard(text, sources, false); }
+        if (ev.type === "error") text += `\n\n${ev.text}`;
+        scroll();
       }
     }
   } catch (err) {
-    text += `\n\n⚠️ ${err.message}`;
+    text += `\n\nSomething went wrong: ${err.message}`;
   }
-  bot.innerHTML = renderAnswer(text, sources) + renderSources(sources);
-  chat.scrollTop = chat.scrollHeight;
-  btn.disabled = false;
-  $("#ask-input").focus();
-};
+  card.innerHTML = answerCard(text, sources, true);
+  if (!sources.length) card.classList.add("not-found");
+  card.querySelector(".copy-this")?.addEventListener("click", () => {
+    const plain = text.replace(/\*\*/g, "").replace(/\[(\d+)\]/g, (m, n) => sources[n - 1] ? `(p. ${sources[n - 1].page})` : "");
+    navigator.clipboard.writeText(plain).then(() => toast("Copied to clipboard"), () => toast("Couldn't copy", "bad"));
+  });
+  card.querySelector(".sources-toggle")?.addEventListener("click", () => card.querySelector(".source-list").classList.toggle("hidden"));
+  card.querySelector(".quiz-this")?.addEventListener("click", () => quizOnPage(sources[0]));
+  scroll();
+  $$(".send").forEach((b) => (b.disabled = false));
+}
+
+// "Quiz me on this": practise the chapter the answer came from.
+async function quizOnPage(src) {
+  const [map, where] = await Promise.all([api("/api/map"), api(`/api/section-of/${src.chunk_id}`)]);
+  const book = map.find((b) => b.doc_id === (where.doc_id ?? src.doc_id));
+  const sec = book?.sections.find((s) => s.index === where.index && s.questions)
+    || book?.sections.find((s) => s.page_from <= src.page && src.page <= s.page_to && s.questions);
+  if (!sec) { toast("There are no quiz questions for this part of the book yet."); return; }
+  quizRange = { doc_id: book.doc_id, section: sec.index, page_from: sec.page_from, page_to: sec.page_to, title: sec.title };
+  show("study");
+  openTab("quiz");
+}
+
+// The start screen: greeting, suggestions from your own books, and today at a glance.
+async function loadAskHome() {
+  const hour = new Date().getHours();
+  const part = hour < 5 ? "Good evening" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const name = status?.settings?.name;
+  $("#greeting").textContent = name ? `${part}, ${name}` : part;
+
+  const books = docs.filter((d) => d.status === "ready" && d.kind !== "paper");
+  if (!books.length) {
+    setHTML($("#suggest"), "");
+    setHTML($("#glance"), `<button class="pill" data-goto="library">${icon("upload")}<b>Add your first book</b> to get started<span class="go">Open Library →</span></button>`);
+    return;
+  }
+  let map = [], plan = null;
+  try { [map, plan] = await Promise.all([api("/api/map"), api("/api/plan")]); } catch {}
+  const sections = map.flatMap((b) => b.sections.map((s) => ({ ...s, doc_id: b.doc_id })))
+    .filter((s) => !/^pages\s/i.test(s.title));
+  const topic = (t) => t.replace(/^(chapter|unit|section|lesson)\s*[\dIVX]+\s*[:.\-–]?\s*/i, "").trim();
+  const pick = sections.filter((s) => topic(s.title).split(" ").length <= 6);
+  const day = new Date().getDate();
+  const chips = [];
+  if (pick.length) chips.push({ icon: "ask", text: `What is ${topic(pick[day % pick.length].title).toLowerCase()}?`, ask: true });
+  if (pick.length > 1) chips.push({ icon: "ask", text: `Explain ${topic(pick[(day + 1) % pick.length].title).toLowerCase()}`, ask: true });
+  const weak = sections.filter((s) => s.questions && ["weak", "shaky"].includes(s.status)).sort((a, b) => a.strength - b.strength)[0]
+    || sections.find((s) => s.questions && s.status === "new");
+  if (weak) chips.push({ icon: "quiz", text: weak.status === "new" ? `Start practising: ${weak.title}` : "Quiz me on my weakest chapter", practise: weak });
+  setHTML($("#suggest"), chips.map((c, i) => `<button type="button" data-chip="${i}">${icon(c.icon)}${esc(c.text)}</button>`).join(""));
+  $$("#suggest [data-chip]").forEach((b) => (b.onclick = () => {
+    const c = chips[Number(b.dataset.chip)];
+    if (c.ask) ask(c.text, $("#ask-scope").value);
+    else {
+      quizRange = { doc_id: c.practise.doc_id, section: c.practise.index, page_from: c.practise.page_from, page_to: c.practise.page_to, title: c.practise.title };
+      show("study");
+      openTab("quiz");
+    }
+  }));
+
+  const due = status?.study?.due || 0, streak = plan?.streak || 0;
+  setHTML($("#glance"),
+    (streak ? `<span class="pill">${icon("flame")}<b>${streak}-day</b> streak</span>` : "") +
+    (due ? `<button class="pill" id="glance-due">${icon("calendar")}<b>${due}</b> question${due > 1 ? "s" : ""} due today<span class="go">Start →</span></button>`
+         : `<button class="pill" data-goto="study">${icon("study")}Open your study plan<span class="go">→</span></button>`));
+  $("#glance-due")?.addEventListener("click", () => { quizRange = null; show("study"); openTab("quiz"); });
+}
 
 /* ---------- search ---------- */
 $("#search-form").onsubmit = async (e) => {
@@ -139,7 +294,9 @@ async function upload(files) {
   drop.querySelector("strong").textContent = "Adding…";
   const res = await api("/api/documents", { method: "POST", body: form });
   const skipped = res.filter((r) => r.duplicate || r.error);
-  if (skipped.length) alert(skipped.map((r) => `${r.name}: ${r.error || "already in your library"}`).join("\n"));
+  skipped.forEach((r) => toast(`${r.name}: ${r.error || "already in your library"}`, r.error ? "bad" : ""));
+  const added = res.length - skipped.length;
+  if (added) toast(`Added ${added} file${added > 1 ? "s" : ""}. Folaio is reading ${added > 1 ? "them" : "it"} now.`);
   drop.querySelector("strong").textContent = "Drop PDFs or Subject Packs here";
   $("#file-input").value = "";
   refresh();
@@ -156,8 +313,9 @@ function renderDocs() {
     const pct = d.study_total ? Math.round((100 * d.study_done) / d.study_total) : 0;
     const studying = d.status === "ready" && d.study_status !== "done" && status?.brain.installed;
     return `<div class="doc">
+      <span class="file-icon">${icon(d.kind === "paper" ? "paper" : "file", "")}</span>
       <div class="grow">
-        <div class="name">${esc(d.name)} ${d.kind === "paper" ? `<span class="badge">📝 Past paper</span>` : ""}</div>
+        <div class="name">${esc(d.name)} ${d.kind === "paper" ? `<span class="badge">${icon("paper")}Past paper</span>` : ""}</div>
         <div class="meta">${d.pages || "?"} page${d.pages === 1 ? "" : "s"} · ${d.kind === "paper" ? "exam paper" : `${d.cards} quiz questions`}
           ${d.error ? ` · <span style="color:var(--bad)">${esc(d.error)}</span>` : ""}
           ${studying ? ` · Folaio Plus is writing notes ${pct}%` : ""}</div>
@@ -180,7 +338,7 @@ async function openPack(file) {
   try {
     const r = await api("/api/packs", { method: "POST", body: form });
     msg.className = "small";
-    msg.innerHTML = `✅ Opened <b>${esc(r.name)}</b>${r.author ? ` by ${esc(r.author)}` : ""}: ` +
+    msg.innerHTML = `Opened <b>${esc(r.name)}</b>${r.author ? ` by ${esc(r.author)}` : ""}: ` +
       (r.added.length ? `added ${r.added.length} document${r.added.length > 1 ? "s" : ""}` : "nothing new") +
       (r.skipped.length ? ` (${r.skipped.length} already in your library)` : "") +
       (r.added.length ? ". Folaio is learning it now; quizzes are ready in the Study page." : ".");
@@ -194,9 +352,9 @@ $("#pack-input").onchange = (e) => { if (e.target.files[0]) openPack(e.target.fi
 
 $("#share-pack").onclick = () => {
   const ready = docs.filter((d) => d.status === "ready");
-  if (!ready.length) { alert("Add some PDFs first; then you can share them as a Subject Pack."); return; }
+  if (!ready.length) { toast("Add some PDFs first; then you can share them as a Subject Pack."); return; }
   $("#pack-docs").innerHTML = ready.map((d) => `<label><input type="checkbox" value="${d.id}" checked>
-    ${esc(d.name)} ${d.kind === "paper" ? `<span class="badge">📝 Past paper</span>` : ""}</label>`).join("");
+    ${esc(d.name)} ${d.kind === "paper" ? `<span class="badge">${icon("paper")}Past paper</span>` : ""}</label>`).join("");
   $("#pack-err").textContent = "";
   $("#pack-dialog").classList.remove("hidden");
   $("#pack-name").focus();
@@ -224,7 +382,7 @@ $("#pack-form").onsubmit = async (e) => {
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     $("#pack-dialog").classList.add("hidden");
     $("#pack-msg").className = "small";
-    $("#pack-msg").textContent = `✅ Saved ${decodeURIComponent(name)} to your Downloads. Share it by USB, email or WhatsApp.`;
+    $("#pack-msg").textContent = `Saved ${decodeURIComponent(name)} to your Downloads. Share it by USB, email or WhatsApp.`;
   } catch (err) {
     $("#pack-err").textContent = err.message;
   } finally {
@@ -242,7 +400,7 @@ async function removeDoc(id, name) {
 function fillScopes() {
   const ready = docs.filter((d) => d.status === "ready" && d.kind !== "paper");
   const opts = (all) => (all ? `<option value="">${all}</option>` : "") + ready.map((d) => `<option value="${d.id}">${esc(d.name)}</option>`).join("");
-  for (const [sel, all] of [["#ask-scope", "All documents"], ["#quiz-scope", "All documents"], ["#notes-doc", null], ["#chk-scope", "All documents"]]) {
+  for (const [sel, all] of [["#ask-scope", "All books"], ["#dock-scope", "All books"], ["#quiz-scope", "All books"], ["#notes-doc", null], ["#chk-scope", "All books"]]) {
     const el = $(sel), cur = el.value;
     el.innerHTML = opts(all);
     if ([...el.options].some((o) => o.value === cur)) el.value = cur;
@@ -285,7 +443,7 @@ async function uploadPapers(files) {
   paperDrop.querySelector("strong").textContent = "Adding…";
   const res = await api("/api/documents?kind=paper", { method: "POST", body: form });
   const skipped = res.filter((r) => r.duplicate || r.error);
-  if (skipped.length) alert(skipped.map((r) => `${r.name}: ${r.error || "already added"}`).join("\n"));
+  skipped.forEach((r) => toast(`${r.name}: ${r.error || "already added"}`, r.error ? "bad" : ""));
   paperDrop.querySelector("strong").textContent = "Add past exam papers (PDF)";
   $("#paper-input").value = "";
   setTimeout(loadPapers, 1500);
@@ -304,7 +462,7 @@ async function loadPapers() {
   let html = "";
   if (!r.books) html += `<div class="banner">Add your textbook in the Library too, so Folaio can link each question to the chapter that answers it.</div>`;
   if (r.topics.length) {
-    html += `<div class="plan"><div class="plan-head"><h4>📊 Most examined topics</h4>
+    html += `<div class="plan"><div class="plan-head"><h4>${icon("chart")} Most examined topics</h4>
       <span class="muted small">from ${nPapers} paper${nPapers > 1 ? "s" : ""}</span></div>` +
       r.topics.slice(0, 12).map((t) => `<div class="topic"><span class="dot bg-${t.status}" title="${STATES[t.status]}"></span>
         <div class="grow"><b>${esc(t.title)}</b>
@@ -321,9 +479,9 @@ async function loadPapers() {
       ${p.questions.map((q) => `<div class="pq"><span class="num">${esc(q.number)}</span>
         <div class="grow">${q.context ? `<span class="muted">${esc(q.context)} </span>` : ""}${esc(q.text)}${q.marks ? ` <span class="muted small">[${q.marks}]</span>` : ""}
           <div class="small" style="margin-top:4px">${q.chapter
-            ? `📖 <a class="cite" href="${pdfLink(q.chapter.doc_id, q.chapter.page_from)}" target="_blank">${esc(q.chapter.title)} · p.${q.chapter.page_from}</a>`
+            ? `<a class="cite" href="${pdfLink(q.chapter.doc_id, q.chapter.page_from)}" target="_blank">${esc(q.chapter.title)} · p.${q.chapter.page_from}</a>`
             : `<span class="muted">Not covered by your books</span>`}</div></div>
-        <div class="btns">${q.chapter ? `<button class="ghost answer-this" data-q="${esc(q.text)}" data-doc="${q.chapter.doc_id}">✍️ Answer this</button>` : ""}</div>
+        <div class="btns">${q.chapter ? `<button class="ghost answer-this" data-q="${esc(q.text)}" data-doc="${q.chapter.doc_id}">${icon("pen")}Answer this</button>` : ""}</div>
       </div>`).join("")}
     </details>`;
   }).join("");
@@ -367,16 +525,12 @@ $("#check-form").onsubmit = async (e) => {
         : `<div class="hint">${p.matched.length ? `You mentioned ${words(p.matched)}. ` : ""}Missing: ${words(p.missing)}</div>`;
       return `<div class="kp"><span class="icon">${icon[p.status]}</span><div>${esc(p.text)}${where}${hint}</div></div>`;
     }).join("")}
-    ${r.unsupported.length ? `<div class="unsupported"><b>⚠️ Double-check:</b> these parts of your answer aren't in your book:
+    ${r.unsupported.length ? `<div class="unsupported"><b>Double-check:</b> these parts of your answer aren't in your book:
       <ul>${r.unsupported.map((u) => `<li>${esc(u)}</li>`).join("")}</ul></div>` : ""}
   </div>`;
 };
 
 /* ---------- today: daily plan ---------- */
-const store = {
-  get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
-};
 
 async function loadToday() {
   const minutes = Number(store.get("folaio-minutes", 20));
@@ -388,16 +542,16 @@ async function loadToday() {
   }
   const secAttrs = (s) => `data-doc="${s.doc_id}" data-section="${s.index}" data-from="${s.page_from}" data-to="${s.page_to}" data-title="${esc(s.title)}"`;
   const task = (t) => {
-    if (t.kind === "review") return `<div class="task"><span class="icon">🔁</span>
+    if (t.kind === "review") return `<div class="task"><span class="icon">${icon("calendar", "")}</span>
       <div class="grow"><b>Review ${t.count} question${t.count > 1 ? "s" : ""}</b>
         <div class="muted small">Due today so you don't forget them${t.total > t.count ? ` (${t.total - t.count} more can wait)` : ""} · ~${t.minutes} min</div></div>
       <div class="btns"><button class="primary" id="start-review">Start</button></div></div>`;
     const s = t.section;
-    if (t.kind === "practise") return `<div class="task"><span class="icon">🎯</span>
+    if (t.kind === "practise") return `<div class="task"><span class="icon">${icon("target", "")}</span>
       <div class="grow"><b>Strengthen: ${esc(s.title)}</b>
         <div class="muted small">${esc(s.doc)} · ${STATES[s.status]} · ${tileMeta(s)} · ~${t.minutes} min</div></div>
       <div class="btns"><button class="primary practise" ${secAttrs(s)}>Practise</button></div></div>`;
-    return `<div class="task"><span class="icon">📖</span>
+    return `<div class="task"><span class="icon">${icon("library", "")}</span>
       <div class="grow"><b>Learn: ${esc(s.title)}</b>
         <div class="muted small">${esc(s.doc)} · p.${s.page_from}–${s.page_to} · read the summary, then try its ${s.questions} questions · ~${t.minutes} min</div></div>
       <div class="btns"><button class="ghost read-summary" data-doc="${s.doc_id}">Read</button>
@@ -406,7 +560,7 @@ async function loadToday() {
   const examLine = (e) => {
     if (!e.exam_date) return `No exam date set · ${e.mastered}/${e.chapters} chapters mastered`;
     if (e.days_left < 0) return `Exam was on ${e.exam_date}`;
-    const when = e.days_left === 0 ? "Exam today! Good luck 🍀" : `📅 ${e.days_left} day${e.days_left > 1 ? "s" : ""} left`;
+    const when = e.days_left === 0 ? "Exam today! Good luck 🍀" : `${e.days_left} day${e.days_left > 1 ? "s" : ""} left`;
     const pace = e.new_per_day ? ` · learn about ${e.new_per_day} new chapter${e.new_per_day > 1 ? "s" : ""} a day to cover everything`
       : " · every chapter started: keep reviewing";
     return `${when} · ${e.mastered}/${e.chapters} chapters mastered${e.days_left > 0 ? pace : ""}`;
@@ -414,7 +568,7 @@ async function loadToday() {
 
   box.innerHTML = `
     <div class="today-top">
-      <div class="stat"><b>🔥 ${plan.streak}</b><span>day streak</span></div>
+      <div class="stat"><b>${plan.streak}</b><span>${icon("flame")} day streak</span></div>
       <div class="stat"><b>${plan.today.answered}</b><span>answered today${plan.today.answered ? ` · ${Math.round(100 * plan.today.right / plan.today.answered)}% right` : ""}</span></div>
     </div>
     <div class="plan">
@@ -423,7 +577,7 @@ async function loadToday() {
           <select id="plan-minutes" class="scope">${[10, 20, 30, 45, 60, 90].map((m) =>
             `<option value="${m}" ${m === plan.minutes ? "selected" : ""}>${m} min</option>`).join("")}</select></label></div>
       ${plan.tasks.length ? plan.tasks.map(task).join("")
-        : `<div class="task"><span class="icon">🎉</span><div class="grow"><b>All done for today</b>
+        : `<div class="task"><span class="icon">${icon("check", "")}</span><div class="grow"><b>All done for today</b>
             <div class="muted small">Nothing is due and every chapter has been started. Come back tomorrow.</div></div></div>`}
     </div>
     <div class="plan">
@@ -472,7 +626,7 @@ async function loadMap() {
 
   let html = "";
   if (focus.length) {
-    html += `<div class="focus"><h4>🎯 Focus next</h4>` + focus.map((s) => `
+    html += `<div class="focus"><h4>${icon("target")} Focus next</h4>` + focus.map((s) => `
       <div class="focus-item"><span class="dot bg-${s.status}"></span>
         <div class="grow"><b>${esc(s.title)}</b><div class="muted small">${esc(s.doc)} · p.${s.page_from}–${s.page_to} · ${STATES[s.status]}: ${tileMeta(s)}</div></div>
         <button class="ghost practise" ${attrs(s)}>Practise</button></div>`).join("") + `</div>`;
@@ -493,7 +647,7 @@ async function loadMap() {
           title="${STATES[s.status]}${s.questions ? ". Click to practise this section" : ""}">
           <span class="tile-title">${esc(s.title)}</span>
           <span class="tile-meta">p.${s.page_from}–${s.page_to} · ${tileMeta(s)}</span>
-          ${s.exam_hits ? `<span class="exam-badge">📝 in exams ×${s.exam_hits}</span>` : ""}
+          ${s.exam_hits ? `<span class="exam-badge">${icon("paper")} in exams ×${s.exam_hits}</span>` : ""}
         </button>`).join("")}</div>
     </div>`;
   }
@@ -565,7 +719,14 @@ const ago = (t) => { const m = Math.round((Date.now() / 1000 - t) / 60); return 
 
 function renderSettings() {
   $("#data-dir").textContent = status.data_dir;
+  const name = $("#your-name");
+  if (document.activeElement !== name) name.value = status.settings.name || "";
 }
+$("#your-name").onchange = async (e) => {
+  await post("/api/settings", { name: e.target.value.trim().slice(0, 40) });
+  toast("Saved");
+  refresh();
+};
 
 function renderBrains() {
   const b = status.brain, hw = status.hardware, dl = b.download, mind = status.mind;
@@ -574,7 +735,7 @@ function renderBrains() {
   $("#folder-reset").hidden = b.folder_is_default;
   $("#folder-missing").hidden = b.folder_ok;
   $("#core-now").innerHTML = mind.ready
-    ? `✅ Knows ${mind.words.toLocaleString()} different words from your library` +
+    ? `Knows ${mind.words.toLocaleString()} different words from your library` +
       (mind.accuracy != null ? ` · recognises ${Math.round(mind.accuracy * 100)}% of sentences it has never seen` : "") +
       ` · last learned ${ago(mind.learned_at)}`
     : "Add PDFs to the Library and Folaio Core will learn them.";
@@ -705,18 +866,30 @@ function renderWelcomeProgress() {
 
 /* ---------- polling ---------- */
 let welcomeChecked = false;
+let askHomeKey = "";
 async function refresh() {
   try {
     [status, docs] = await Promise.all([api("/api/status"), api("/api/documents")]);
-  } catch { $("#activity").textContent = "Folaio is not running"; return; }
-  const b = status.brain;
-  const plus = b.installed ? " + Plus" : b.download.active ? `<br>✨ Plus downloading ${pct(b.download)}%` : "";
-  $("#activity").innerHTML = `🧠 Folaio Core${plus}<br>${esc(status.activity === "idle" ? "Ready" : status.activity)}`;
+  } catch {
+    setHTML($("#activity"), `<span class="dot" style="background:var(--bad)"></span><span>Folaio isn't running</span>`);
+    return;
+  }
+  const b = status.brain, busy = status.activity !== "idle";
+  const line = busy ? esc(status.activity)
+    : b.download.active ? `Downloading a Plus brain · ${pct(b.download)}%`
+    : `Folaio Core${b.installed ? " + Plus" : ""} · ready`;
+  setHTML($("#activity"), `<span class="dot ${busy || b.download.active ? "busy" : ""}"></span><span>${line}</span>`);
+  const due = status.study.due || 0;
+  $("#due-count").textContent = due > 99 ? "99+" : due;
+  $("#due-count").classList.toggle("hidden", !due);
   $("#inbox-hint").textContent = `Tip: PDFs dropped into ${status.inbox} are added automatically.`;
   renderDocs();
   fillScopes();
   if ($("#view-settings").classList.contains("active")) renderSettings();
   if ($("#view-brains").classList.contains("active")) renderBrains();
+  // Refresh the Ask start screen when something it shows has changed.
+  const key = JSON.stringify([docs.map((d) => d.id + d.status), due, status.settings.name, status.mind.learned_at]);
+  if (key !== askHomeKey && !inChat()) { askHomeKey = key; loadAskHome(); }
   renderWelcomeProgress();
   if (!welcomeChecked) {
     welcomeChecked = true;
@@ -724,5 +897,4 @@ async function refresh() {
   }
 }
 
-refresh();
 setInterval(refresh, 2500);

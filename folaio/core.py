@@ -412,6 +412,16 @@ class Folaio:
                 groups[idx].append(card)
         return sections, groups
 
+    def section_of_chunk(self, chunk_id: int) -> dict | None:
+        """Which study section (chapter) a passage belongs to."""
+        for d in self.memory.documents():
+            if d.get("kind", "book") != "book" or d["status"] != "ready":
+                continue
+            for i, sec in enumerate(_sections(self.memory.chunks_for(d["id"]), with_ids=True)):
+                if chunk_id in sec[3]:
+                    return {"doc_id": d["id"], "index": i}
+        return None
+
     def practice_card(self, doc_id: int, section: int) -> dict | None:
         sections, groups = self._section_cards(doc_id)
         if not 0 <= section < len(groups):
