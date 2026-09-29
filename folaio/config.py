@@ -92,8 +92,10 @@ for _d in (DEFAULT_MODELS_DIR, MIND_DIR, FILES_DIR, INBOX_DIR):
 class WriterSpec:
     key: str
     label: str
+    repo: str             # Hugging Face repository
+    revision: str         # exact version (commit) of that repository, so everyone gets the tested file
     file: str
-    url: str
+    sha256: str           # the file's fingerprint; downloads that don't match are rejected
     size_bytes: int
     min_ram_gb: float
     license: str
@@ -102,20 +104,29 @@ class WriterSpec:
     blurb: str = ""
 
     @property
+    def url(self) -> str:
+        return f"https://huggingface.co/{self.repo}/resolve/{self.revision}/{self.file}"
+
+    @property
     def path(self) -> Path:
         return models_dir() / self.file
 
 
-_HF = "https://huggingface.co/bartowski"
-# Only very small brains, so Folaio stays light. Both Apache-2.0 (fine to ship).
+# Only very small brains, so Folaio stays light. All Apache-2.0 (fine to ship).
 # Tiny models write unreliable quiz answer keys, so Folaio Core makes the quizzes.
+#
+# Adding a brain in a new Folaio version: append it here (pinned revision + sha256 from
+# https://huggingface.co/api/models/<repo>?blobs=true). Users see it marked "New" on the
+# Brains page; nothing is ever downloaded or switched automatically.
 WRITERS: list[WriterSpec] = [
-    WriterSpec("mini", "SmolLM2 360M Instruct", "SmolLM2-360M-Instruct-Q4_K_M.gguf",
-               f"{_HF}/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf",
+    WriterSpec("mini", "SmolLM2 360M Instruct", "bartowski/SmolLM2-360M-Instruct-GGUF",
+               "7be6f65f1db715fe5dc5a4634c0d459b4eed42ec", "SmolLM2-360M-Instruct-Q4_K_M.gguf",
+               "2fa3f013dcdd7b99f9b237717fa0b12d75bbb89984cc1274be1471a465bac9c2",
                270_590_880, 0, "Apache-2.0", quizzes=False,
                name="Mini", blurb="Smallest and fastest. Works on any computer."),
-    WriterSpec("small", "Qwen2.5 0.5B Instruct", "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
-               f"{_HF}/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+    WriterSpec("small", "Qwen2.5 0.5B Instruct", "bartowski/Qwen2.5-0.5B-Instruct-GGUF",
+               "41ba88dbac95fed2528c92514c131d73eb5a174b", "Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+               "6eb923e7d26e9cea28811e1a8e852009b21242fb157b26149d3b188f3a8c8653",
                397_808_192, 4, "Apache-2.0", quizzes=False,
                name="Small", blurb="A little smarter. For computers with 4 GB RAM or more."),
 ]

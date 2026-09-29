@@ -54,7 +54,7 @@
     <button data-view="search"><svg class="i"><use href="#i-search"/></svg>Search</button>
     <button data-view="study"><svg class="i"><use href="#i-study"/></svg>Study<span class="nav-count hidden" id="due-count"></span></button>
     <button data-view="library"><svg class="i"><use href="#i-library"/></svg>Library</button>
-    <button data-view="brains"><svg class="i"><use href="#i-brains"/></svg>Brains</button>
+    <button data-view="brains"><svg class="i"><use href="#i-brains"/></svg>Brains<span class="nav-count hidden" id="brains-new">New</span></button>
   </nav>
   <div class="side-foot">
     <nav class="bottom-nav"><button data-view="settings"><svg class="i"><use href="#i-settings"/></svg>Settings</button></nav>
@@ -192,6 +192,7 @@
     <h3>Folaio Plus <span class="badge">Optional</span></h3>
     <p class="muted small">A tiny brain that adds a short "In simple words" explanation under each answer and writes
       extra summaries. Downloaded once, then it works offline. You can switch it off or remove it any time.</p>
+    <div id="new-brain" class="banner" hidden></div>
     <div id="engine-missing" class="banner" hidden>
       <b>One more step to use Folaio Plus.</b> The engine that runs Plus brains isn't installed yet.
       Stop Folaio, then run the command for your computer in the Folaio folder (see the README for details):

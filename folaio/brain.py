@@ -5,6 +5,7 @@ Loaded only when needed and unloaded after a few idle minutes to free RAM.
 from __future__ import annotations
 
 import atexit
+import hashlib
 import shutil
 import threading
 import time
@@ -146,11 +147,17 @@ class Writer:
                     self.download["error"] = f"Connection problem, retrying ({attempt}/{attempts - 1})…"
                     time.sleep(3 * attempt)
             self.download["error"] = None
+            self.download["verifying"] = True
+            if _sha256(part) != spec.sha256:
+                part.unlink(missing_ok=True)   # damaged or altered: never keep it
+                raise IOError("The downloaded brain didn't match its official fingerprint, so it was "
+                              "deleted for your safety. Please try downloading again.")
             part.rename(spec.path)
         except Exception as e:  # surfaced in the UI
             self.download["error"] = str(e)
         finally:
             self.download["active"] = False
+            self.download["verifying"] = False
 
     def _fetch(self, spec: config.WriterSpec, part):
         have = part.stat().st_size if part.exists() else 0
@@ -212,3 +219,12 @@ class Writer:
         with self._lock:
             if self._spec != config.active_writer():
                 self._llm, self._spec = None, None
+
+
+def _sha256(path: Path) -> str:
+    """The file's SHA-256 fingerprint (read in 4 MB pieces, so memory stays small)."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(4 << 20), b""):
+            h.update(block)
+    return h.hexdigest()

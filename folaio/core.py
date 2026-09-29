@@ -541,6 +541,15 @@ class Folaio:
                 "today": self.memory.answered_since(midnight),
                 "planned_minutes": sum(t["minutes"] for t in tasks)}
 
+    def _new_brains(self) -> list[str]:
+        """Brains added to the list since the user last looked at the Brains page."""
+        keys = [w.key for w in config.WRITERS]
+        seen = config.load_settings().get("seen_brains")
+        if seen is None:   # first run: everything that exists now counts as known
+            config.save_settings(seen_brains=keys)
+            return []
+        return [k for k in keys if k not in seen]
+
     def status(self) -> dict:
         spec = self.writer.spec
         rec = config.recommended_writer()
@@ -549,6 +558,7 @@ class Folaio:
             "hardware": config.hardware() | {"disk_free_gb": config.disk_free_gb()},
             "activity": self.activity,
             "brain": {
+                "new": self._new_brains(),                # added by a Folaio update, not seen yet
                 "engine": self.writer.engine_installed,   # llama.cpp installed (optional)
                 "installed": asdict(spec) if spec else None,
                 "loaded": self.writer.loaded,

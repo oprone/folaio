@@ -219,6 +219,13 @@ def download_brain(key: str):
     return {"ok": True}
 
 
+@app.post("/api/brains/seen")
+def brains_seen():
+    """The user has looked at the Brains page: no brain is "new" any more."""
+    config.save_settings(seen_brains=[w.key for w in config.WRITERS])
+    return {"ok": True}
+
+
 @app.post("/api/brain/{key}/use")
 def use_brain(key: str):
     """Pick which downloaded brain Folaio Plus uses, or "off" for Folaio Core only."""

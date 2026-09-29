@@ -52,7 +52,7 @@ function show(view) {
   $$("nav button").forEach((b) => b.classList.toggle("active", b.dataset.view === view));
   $$(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
   if (view === "study") loadStudy();
-  if (view === "brains" && status) renderBrains();
+  if (view === "brains" && status) openBrains();
   if (view === "settings" && status) renderSettings();
   if (view === "ask") (inChat() ? $("#dock-input") : $("#ask-input")).focus();
   if (view === "search") $("#search-input").focus();
@@ -728,8 +728,19 @@ $("#your-name").onchange = async (e) => {
   refresh();
 };
 
+let newBrains = [];   // "new" brains shown during this visit to the Brains page
+async function openBrains() {
+  newBrains = status?.brain?.new || [];
+  renderBrains();
+  if (newBrains.length) { await post("/api/brains/seen", {}); refresh(); }
+}
+
 function renderBrains() {
   const b = status.brain, hw = status.hardware, dl = b.download, mind = status.mind;
+  const fresh = b.options.filter((o) => newBrains.includes(o.key));
+  $("#new-brain").hidden = !fresh.length;
+  $("#new-brain").innerHTML = fresh.length ? `<b>✨ New brain${fresh.length > 1 ? "s" : ""} available:</b> ` +
+    fresh.map((o) => `<b>${esc(o.name)}</b> (${esc(o.blurb)})`).join(", ") + ". Download it below if you'd like to try it." : "";
   $("#engine-missing").hidden = b.engine !== false;   // only when the server says it is missing
   $("#hw").textContent = `This computer: ${hw.os} · ${hw.ram_gb} GB RAM · ${hw.cpu_cores} CPU cores · ${hw.disk_free_gb} GB free disk space`;
   $("#brain-folder").textContent = b.folder + (b.folder_is_default ? "  (default)" : "");
@@ -753,8 +764,9 @@ function renderBrains() {
     const fitsDisk = hw.disk_free_gb * 1e9 > o.size_bytes * 1.1;
     let state = o.active ? `<span class="badge ready">In use</span>`
       : o.installed ? `<span class="badge">Downloaded</span>`
-      : busy ? `<span class="badge">Downloading ${pct(dl)}%</span>` : `<span class="badge">Not downloaded</span>`;
+      : busy ? `<span class="badge">${dl.verifying ? "Checking the download…" : `Downloading ${pct(dl)}%`}</span>` : `<span class="badge">Not downloaded</span>`;
     if (o.key === b.recommended) state += ` <span class="badge">⭐ Best for this computer</span>`;
+    if (newBrains.includes(o.key)) state += ` <span class="badge" style="background:var(--accent-soft);color:var(--accent-text)">✨ New</span>`;
     const buttons = o.installed
       ? (o.active ? "" : `<button class="ghost" onclick="useBrain('${o.key}')">Use this</button>`) +
         `<button class="ghost" onclick="removeBrain('${o.key}', '${esc(o.name)}')">Remove</button>`
@@ -880,6 +892,7 @@ async function refresh() {
     : b.download.active ? `Downloading a Plus brain · ${pct(b.download)}%`
     : `Folaio Core${b.installed ? " + Plus" : ""} · ready`;
   setHTML($("#activity"), `<span class="dot ${busy || b.download.active ? "busy" : ""}"></span><span>${line}</span>`);
+  $("#brains-new").classList.toggle("hidden", !(b.new || []).length);
   const due = status.study.due || 0;
   $("#due-count").textContent = due > 99 ? "99+" : due;
   $("#due-count").classList.toggle("hidden", !due);
