@@ -730,7 +730,7 @@ $("#your-name").onchange = async (e) => {
 
 function renderBrains() {
   const b = status.brain, hw = status.hardware, dl = b.download, mind = status.mind;
-  $("#engine-missing").hidden = b.engine;
+  $("#engine-missing").hidden = b.engine !== false;   // only when the server says it is missing
   $("#hw").textContent = `This computer: ${hw.os} · ${hw.ram_gb} GB RAM · ${hw.cpu_cores} CPU cores · ${hw.disk_free_gb} GB free disk space`;
   $("#brain-folder").textContent = b.folder + (b.folder_is_default ? "  (default)" : "");
   $("#folder-reset").hidden = b.folder_is_default;
@@ -835,7 +835,7 @@ function showWelcome() {
     <p>Folaio is an AI that learns from <b>your</b> PDFs, right here on this computer. No internet, no account.</p>
     <p>Add a textbook or your notes, and within seconds you can search it, ask questions and practise with quizzes.</p>
     <div class="actions"><button class="primary" id="w-start">Add my first PDF</button></div>
-    <div class="welcome-plus" ${b.engine ? "" : "hidden"}>
+    <div class="welcome-plus" ${b.engine === false ? "hidden" : ""}>
       <p class="small"><b>Optional:</b> add a tiny <b>Folaio Plus</b> brain so Folaio can also explain answers in simple words.
         It's downloaded once and then works offline.</p>
       <div class="plus-choices">${b.options.map((o) => `
